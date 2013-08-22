@@ -3,6 +3,7 @@ package rdf2neo
 import org.neo4j.tooling._
 import org.neo4j.kernel._
 import org.neo4j.graphdb._
+import org.neo4j.graphdb.factory.GraphDatabaseFactory
 import collection.JavaConverters._
 
 object Main extends App {
@@ -26,13 +27,24 @@ object Main extends App {
     } else if (turtle.startsWith("#")) { 
       // definitely don't need to handle these
     } else {
-      val (subj, pred, obj) = turtle.substring(.split("\\s+")
-      val tx = graph.beginTx
-      try {
-        // http://docs.neo4j.org/chunked/milestone/tutorials-java-embedded-new-index.html
-        tx.success
-      } finally {
-        tx.finish
+      val arr = turtle.substring(0,turtle.length-1).split("\\s+")
+      if(arr.length == 3) {
+        val (subj, pred, obj) = (arr(0), arr(1), arr(2))
+        if(Settings.nodeTypePredicates.contains(pred) && 
+           Settings.nodeTypePredicateFilter.contains(obj)
+           // more filters here
+         ) {
+          val tx = graph.beginTx
+          try {
+            // http://docs.neo4j.org/chunked/milestone/tutorials-java-embedded-new-index.html
+            println("subj: "+subj);
+            println("pred: "+pred);
+            println("obj: "+obj);
+            tx.success
+          } finally {
+            tx.finish
+          }
+        }
       }
     }
   }
