@@ -1,4 +1,9 @@
+import AssemblyKeys._ // put this at the top of the file
+
+assemblySettings
+
 name := "rdf2neo"
+
  
 version := "0.1.0"
  
@@ -10,6 +15,7 @@ scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked", "-feat
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+  "com.typesafe" % "config" % "1.0.2",
   "org.neo4j" % "neo4j" % "2.0.0-M04"
 )
 

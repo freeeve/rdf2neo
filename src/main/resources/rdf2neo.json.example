@@ -1,0 +1,10 @@
+{
+  "outputGraphPath":"/path/to/outputgraph/",
+  "zippedTurtleFile":"/path/to/turtle.zip",
+  "ignorePredicate":["ns:type.object.key"],
+  "ignoreSubject":[],
+  "ignoreObject":[],
+  "ignorePredicatePrefix":[],
+  "ignoreSubjectPrefix":[],
+  "ignoreObjectPrefix":[]
+}
