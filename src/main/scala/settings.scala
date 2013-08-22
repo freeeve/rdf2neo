@@ -10,11 +10,12 @@ object Settings {
                    .setAllowMissing(false),
                  ConfigResolveOptions.defaults()
                    .setUseSystemEnvironment(false))
-  println(config.root().render())
+  //println("DEBUG settings:")
+  //println(config.root().render())
   //config.checkValid(ConfigFactory.defaultReference(), "rdf2neo")
 
   val outputGraphPath = config.getString("outputGraphPath")
-  val zippedTurtleFile = config.getString("zippedTurtleFile")
-  val nodeTypePredicates = config.get("nodeTypePredicates")
-  val nodeTypePredicateFilter = config.get("nodeTypePredicateFilter")
+  val gzippedTurtleFile = config.getString("gzippedTurtleFile")
+  val nodeTypePredicates = config.getList("nodeTypePredicates")
+  val nodeTypePredicateFilter = config.getList("nodeTypePredicateFilter")
 }
