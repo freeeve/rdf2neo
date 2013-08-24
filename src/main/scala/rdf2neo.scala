@@ -5,36 +5,32 @@ import org.neo4j.kernel._
 import org.neo4j.graphdb._
 import org.neo4j.graphdb.schema._
 import org.neo4j.graphdb.factory._
+import org.neo4j.unsafe.batchinsert._
 import collection.JavaConverters._
+import gnu.trove.map.hash.TObjectLongHashMap
+
+import java.io.{BufferedReader, InputStreamReader, FileInputStream}
+import java.util.zip.GZIPInputStream
 
 object Main extends App {
-  val graph = new GraphDatabaseFactory()
-    .newEmbeddedDatabaseBuilder(Settings.outputGraphPath)
-    .setConfig(GraphDatabaseSettings.cache_type, "none" )
-    .setConfig(GraphDatabaseSettings.keep_logical_logs, "false" )
-    .newGraphDatabase();
-//  configureIndex(graph, label("Subject"), "value")
-//  configureIndex(graph, label("Object"), "value")
+  //val inserter = BatchInserters.inserter(Settings.outputGraphPath);
 
-  import java.io.{BufferedReader, InputStreamReader, FileInputStream}
-  import java.util.zip.GZIPInputStream
   val is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
   val in = new BufferedReader(new InputStreamReader(is))
   var count:Long = 0
+  var instanceCount:Long = 0
   val startTime = System.currentTimeMillis
-  var tx = graph.beginTx
-  try {
-    Stream.continually(in.readLine()).takeWhile(_ != null).foreach(processTurtle(_))
-    tx.success
-  } finally {
-    tx.finish
-  }
-  graph.shutdown
+  val idMap = new TObjectLongHashMap[String]()
+  Stream.continually(in.readLine()).takeWhile(_ != null).foreach(processTurtle(_))
+
+  //inserter.shutdown();
 
   def processTurtle(turtle:String) = {
     count += 1
-    if(count % 100000 == 0) {
+    if(count % 10000000 == 0) {
       println(count + " turtle lines processed; elapsed: " + ((System.currentTimeMillis - startTime) / 1000) + "s")
+      println("instanceCount: " + instanceCount)
+      println("idMap size: " + idMap.size)
     }
     if(turtle.startsWith("@base")) {
       // do we need to handle these? 
@@ -47,20 +43,25 @@ object Main extends App {
       if(arr.length == 3) {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
         if(true
+        && pred.equals("ns:type.type.instance")
         //Settings.nodeTypePredicates.contains(pred) 
         // &&  Settings.nodeTypePredicateFilter.contains(obj)
            // more filters here
          ) {
-            // http://docs.neo4j.org/chunked/milestone/tutorials-java-embedded-new-index.html
             //println("subj: "+subj)
             //println("pred: "+pred)
             //println("obj: "+obj)
-            val s = graph.createNode(label("Subject"))
-            val o = graph.createNode(label("Object"))
-            val p = s.createRelationshipTo(o, relType(sanitize(pred)))
-            s.setProperty("value", sanitize(subj))
-            p.setProperty("value", sanitize(obj))
-
+            val arr = obj.split("\\.")
+            instanceCount += 1
+            if(!idMap.contains(arr(1))) {
+              idMap.put(arr(1), instanceCount) 
+            } else {
+              println("duplicate: " + turtle)
+            }
+            //val s = inserter.createNode(Map[String,Object]("value" -> sanitize(subj)).asJava, label("Subject"))
+            //val o = inserter.createNode(Map[String,Object]("value" -> sanitize(obj)).asJava, label("Object"))
+            //val p = inserter.createRelationship(s, o, relType(sanitize(pred)), null)
+           
         } else {
           //println("doesn't match filters: " + turtle)
         }
@@ -91,4 +92,5 @@ object Main extends App {
     }
     indexDefinition
   }
+
 }
