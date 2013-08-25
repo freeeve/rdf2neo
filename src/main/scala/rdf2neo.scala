@@ -27,7 +27,7 @@ object Main extends App {
 
   def processTurtle(turtle:String) = {
     count += 1
-    if(count % 1000000 == 0) {
+    if(count % 10000000 == 0) {
       println(count + " turtle lines processed; elapsed: " + ((System.currentTimeMillis - startTime) / 1000) + "s")
       println("instanceCount: " + instanceCount)
       println("idMap size: " + idMap.size)
@@ -42,23 +42,24 @@ object Main extends App {
       val arr = turtle.substring(0,turtle.length-1).split("\\t")
       if(arr.length == 3) {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
+        val subjSplit = subj.split("\\.")
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
         && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))) {
-            //println("subj: "+subj)
-            //println("pred: "+pred)
-            //println("obj: "+obj)
-            val arr = obj.split("\\.")
-            if(!idMap.contains(arr(1))) {
-              instanceCount += 1
-              idMap.put(arr(1), instanceCount) 
-              inserter.createNode(instanceCount, null)
-            } 
-            val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
-            val newLabels = curLabels :+ label(subj)
-            inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
-            println("setting label: "+turtle)
-        } else if (idMap.contains(subj)) { // if this is a property of a node
+          //println("subj: "+subj)
+          //println("pred: "+pred)
+          //println("obj: "+obj)
+          val objSplit = obj.split("\\.")
+          if(!idMap.contains(objSplit(1))) {
+            instanceCount += 1
+            idMap.put(objSplit(1), instanceCount) 
+            inserter.createNode(instanceCount, null)
+          } 
+          val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
+          val newLabels = curLabels :+ label(subj)
+          inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
+          println("setting label: "+turtle)
+        } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
           val id = idMap.get(subj)
           inserter.setNodeProperty(id, pred, obj)
           println("setting property: "+turtle)
