@@ -3,13 +3,13 @@ package rdf2neo
 import collection.JavaConverters._
 import annotation.tailrec
 
+import java.io.{BufferedReader, InputStreamReader, FileInputStream}
+import java.util.zip.GZIPInputStream
+
 import org.neo4j.graphdb.{DynamicRelationshipType, DynamicLabel}
 import org.neo4j.unsafe.batchinsert.BatchInserters
 
 import gnu.trove.map.hash.TObjectLongHashMap
-
-import java.io.{BufferedReader, InputStreamReader, FileInputStream}
-import java.util.zip.GZIPInputStream
 
 object Main extends App {
   val inserter = BatchInserters.inserter(Settings.outputGraphPath);
@@ -19,16 +19,20 @@ object Main extends App {
   var count:Long = 0
   var instanceCount:Long = 0
   val startTime = System.currentTimeMillis
+  var lastTime = System.currentTimeMillis
   val idMap = new TObjectLongHashMap[String]()
-  Stream.continually(in.readLine()).takeWhile(_ != null).foreach(processTurtle(_))
+  Stream.continually(in.readLine())
+        .takeWhile(_ != null)
+        .foreach(processTurtle(_))
 
   inserter.shutdown();
 
-  def processTurtle(turtle:String) = {
+  @inline def processTurtle(turtle:String) = {
     count += 1
     if(count % 10000000 == 0) {
-      println(count + " turtle lines processed; elapsed: " + ((System.currentTimeMillis - startTime) / 1000) + "s")
-      println("instanceCount: " + instanceCount)
+      val curTime = System.currentTimeMillis
+      println(count/1000000 + "M turtle lines processed; elapsed: " + ((curTime - startTime) / 1000) + "s; last 10M: " + ((curTime - lastTime) / 1000) + "s")
+      lastTime = curTime
       println("idMap size: " + idMap.size)
     }
     if(turtle.startsWith("@base")) {
@@ -41,34 +45,32 @@ object Main extends App {
       val arr = turtle.substring(0,turtle.length-1).split("\\t")
       if(arr.length == 3) {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
-        val subjSplit = subj.split("\\.")
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
+//       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects(0).startsWith(subj))
        && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
 //       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))
         ) {
-          val objSplit = obj.split("\\.")
           println("setting label: "+turtle)
-          if(!idMap.contains(objSplit(1))) {
+          if(!idMap.contains(obj)) {
             instanceCount += 1
-            idMap.put(objSplit(1), new java.lang.Long(instanceCount)) 
+            idMap.put(obj, new java.lang.Long(instanceCount)) 
             inserter.createNode(instanceCount, null)
           } 
           var curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
-          curLabels = curLabels :+ DynamicLabel.label(subj)
+          curLabels = curLabels :+ DynamicLabel.label(sanitize(subj))
           inserter.setNodeLabels(instanceCount, curLabels : _*) // the _* is for varargs
-        } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { 
-          val objSplit = obj.split("\\.")
-          // if this is a property/relationship of a node
-          if(objSplit.length == 2 && idMap.contains(objSplit(1))) {
+        } else if (idMap.contains(subj)) { 
+          // this is a property/relationship of a node
+          if(idMap.contains(obj)) {
             // this is a relationship!
-            val subjId = idMap.get(subjSplit(1))
-            val objId = idMap.get(objSplit(1))
-            inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(pred), null)
+            val subjId = idMap.get(subj)
+            val objId = idMap.get(obj)
+            inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(sanitize(pred)), null)
           } else {
             // this is a real property
             println("setting property: " + turtle)
-            val id = idMap.get(subjSplit(1))
+            val id = idMap.get(subj)
             println("found id: " + id)
             if(inserter.nodeHasProperty(id, pred)) {
               println("already has prop: " + id + "; pred: "+pred)
@@ -92,7 +94,7 @@ object Main extends App {
   }
 
   def sanitize(str:String):String = {
-    str.replaceAll("[^A-Za-z0-9]", "")
+    str.replaceAll("[^A-Za-z0-9]", "_")
   }
 
   @inline def listStartsWith(list:Seq[String], str:String):Boolean = {
