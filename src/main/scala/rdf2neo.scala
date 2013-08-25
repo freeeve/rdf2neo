@@ -45,7 +45,8 @@ object Main extends App {
         val subjSplit = subj.split("\\.")
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
-        && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))) {
+       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))
+        ) {
           println("setting label: "+turtle)
           val objSplit = obj.split("\\.")
           if(!idMap.contains(objSplit(1))) {
@@ -58,7 +59,7 @@ object Main extends App {
           inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
         } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
           println("setting property: "+turtle)
-          val id = idMap.get(subj)
+          val id = idMap.get(subjSplit(1))
           println("found id: "+ id)
           if(inserter.nodeHasProperty(id, pred)) {
             println("already has prop: " + id + "; pred: "+pred)
