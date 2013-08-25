@@ -61,7 +61,15 @@ object Main extends App {
           println("setting label: "+turtle)
         } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
           val id = idMap.get(subj)
-          inserter.setNodeProperty(id, pred, obj)
+          if(inserter.nodeHasProperty(id, pred)) {
+            var prop = inserter.getNodeProperties(id).get(pred)
+            prop = prop match {
+              case prop:Array[Any] => prop + obj 
+              case _ => Array(prop) + obj
+            }
+          } else {
+            inserter.setNodeProperty(id, pred, obj) 
+          }
           println("setting property: "+turtle)
         } else {
           //println("doesn't match filters: " + turtle)
