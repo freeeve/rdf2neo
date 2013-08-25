@@ -1,12 +1,11 @@
 package rdf2neo
 
-import org.neo4j.tooling._
-import org.neo4j.kernel._
-import org.neo4j.graphdb._
-import org.neo4j.graphdb.schema._
-import org.neo4j.graphdb.factory._
-import org.neo4j.unsafe.batchinsert._
 import collection.JavaConverters._
+import annotation.tailrec
+
+import org.neo4j.graphdb.{DynamicRelationshipType, DynamicLabel}
+import org.neo4j.unsafe.batchinsert.BatchInserters
+
 import gnu.trove.map.hash.TObjectLongHashMap
 
 import java.io.{BufferedReader, InputStreamReader, FileInputStream}
@@ -45,31 +44,43 @@ object Main extends App {
         val subjSplit = subj.split("\\.")
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
-       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))
+       && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
+//       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))
         ) {
-          println("setting label: "+turtle)
           val objSplit = obj.split("\\.")
+          println("setting label: "+turtle)
           if(!idMap.contains(objSplit(1))) {
             instanceCount += 1
             idMap.put(objSplit(1), new java.lang.Long(instanceCount)) 
             inserter.createNode(instanceCount, null)
           } 
-          val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
-          val newLabels = curLabels :+ label(subj)
-          inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
-        } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
-          println("setting property: "+turtle)
-          val id = idMap.get(subjSplit(1))
-          println("found id: "+ id)
-          if(inserter.nodeHasProperty(id, pred)) {
-            println("already has prop: " + id + "; pred: "+pred)
-            var prop = inserter.getNodeProperties(id).get(pred)
-            prop = prop match {
-              case prop:Array[Any] => {println("prop array detected..."); prop + obj}
-              case _ => {println("converting prop to array..."); Array(prop) + obj}
-            }
+          var curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
+          curLabels = curLabels :+ DynamicLabel.label(subj)
+          inserter.setNodeLabels(instanceCount, curLabels : _*) // the _* is for varargs
+        } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { 
+          val objSplit = obj.split("\\.")
+          // if this is a property/relationship of a node
+          if(objSplit.length == 2 && idMap.contains(objSplit(1))) {
+            // this is a relationship!
+            val subjId = idMap.get(subjSplit(1))
+            val objId = idMap.get(objSplit(1))
+            inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(pred), null)
           } else {
-            inserter.setNodeProperty(id, pred, obj) 
+            // this is a real property
+            println("setting property: " + turtle)
+            val id = idMap.get(subjSplit(1))
+            println("found id: " + id)
+            if(inserter.nodeHasProperty(id, pred)) {
+              println("already has prop: " + id + "; pred: "+pred)
+              var prop = inserter.getNodeProperties(id).get(pred)
+              prop = prop match {
+                case prop:Array[Any] => {println("prop array detected..."); prop + obj}
+                case _ => {println("converting prop to array..."); Array(prop) + obj}
+              }
+              inserter.setNodeProperty(id, pred, prop)
+            } else {
+              inserter.setNodeProperty(id, pred, obj) 
+            }
           }
         } else {
           //println("doesn't match filters: " + turtle)
@@ -80,14 +91,25 @@ object Main extends App {
     }
   }
 
-  def relType(str:String):RelationshipType = DynamicRelationshipType.withName(str)
-
-  def label(str:String):Label = DynamicLabel.label(str)
-
   def sanitize(str:String):String = {
     str.replaceAll("[^A-Za-z0-9]", "")
   }
 
+  @inline def listStartsWith(list:Seq[String], str:String):Boolean = {
+    @inline @tailrec def listStartsWith(list:Seq[String], str:String, i:Int):Boolean = {
+      if(i >= list.length) {
+        false
+      } else if(list(i).startsWith(str)) {
+        true
+      } else {
+        listStartsWith(list, str, i+1)
+      }
+    }
+
+    listStartsWith(list, str, 0)
+  }
+
+/*
   def configureIndex(graphDb:GraphDatabaseService, l:Label, key:String):IndexDefinition = {
     var indexDefinition:IndexDefinition = null
     val tx = graphDb.beginTx();
@@ -101,5 +123,5 @@ object Main extends App {
     }
     indexDefinition
   }
-
+*/
 }

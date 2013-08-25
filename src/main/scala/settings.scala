@@ -1,5 +1,6 @@
 package rdf2neo
 
+import collection.JavaConverters._
 import com.typesafe.config._
 
 object Settings {
@@ -16,6 +17,6 @@ object Settings {
 
   val outputGraphPath = config.getString("outputGraphPath")
   val gzippedTurtleFile = config.getString("gzippedTurtleFile")
-  val nodeTypeSubjects = config.getList("nodeTypeSubjects").unwrapped
-  val nodeTypePredicates = config.getList("nodeTypePredicates").unwrapped
+  val nodeTypeSubjects = config.getList("nodeTypeSubjects").unwrapped.asScala.toSeq.map(_.asInstanceOf[String])
+  val nodeTypePredicates = config.getList("nodeTypePredicates").unwrapped.asScala.toSeq.map(_.asInstanceOf[String])
 }
