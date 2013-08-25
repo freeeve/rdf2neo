@@ -16,6 +16,6 @@ object Settings {
 
   val outputGraphPath = config.getString("outputGraphPath")
   val gzippedTurtleFile = config.getString("gzippedTurtleFile")
-  val nodeTypePredicates = config.getList("nodeTypePredicates")
-  val nodeTypePredicateFilter = config.getList("nodeTypePredicateFilter")
+  val nodeTypeSubjects = config.getList("nodeTypeSubjects").unwrapped
+  val nodeTypePredicates = config.getList("nodeTypePredicates").unwrapped
 }

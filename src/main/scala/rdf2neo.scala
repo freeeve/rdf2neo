@@ -13,7 +13,7 @@ import java.io.{BufferedReader, InputStreamReader, FileInputStream}
 import java.util.zip.GZIPInputStream
 
 object Main extends App {
-  //val inserter = BatchInserters.inserter(Settings.outputGraphPath);
+  val inserter = BatchInserters.inserter(Settings.outputGraphPath);
 
   val is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
   val in = new BufferedReader(new InputStreamReader(is))
@@ -23,11 +23,11 @@ object Main extends App {
   val idMap = new TObjectLongHashMap[String]()
   Stream.continually(in.readLine()).takeWhile(_ != null).foreach(processTurtle(_))
 
-  //inserter.shutdown();
+  inserter.shutdown();
 
   def processTurtle(turtle:String) = {
     count += 1
-    if(count % 10000000 == 0) {
+    if(count % 1000000 == 0) {
       println(count + " turtle lines processed; elapsed: " + ((System.currentTimeMillis - startTime) / 1000) + "s")
       println("instanceCount: " + instanceCount)
       println("idMap size: " + idMap.size)
@@ -42,26 +42,26 @@ object Main extends App {
       val arr = turtle.substring(0,turtle.length-1).split("\\t")
       if(arr.length == 3) {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
-        if(true
-        && pred.equals("ns:type.type.instance")
-        //Settings.nodeTypePredicates.contains(pred) 
-        // &&  Settings.nodeTypePredicateFilter.contains(obj)
-           // more filters here
-         ) {
+        // check if this is a node we want to keep
+        if(Settings.nodeTypePredicates.contains(pred) 
+        && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))) {
             //println("subj: "+subj)
             //println("pred: "+pred)
             //println("obj: "+obj)
             val arr = obj.split("\\.")
-            instanceCount += 1
             if(!idMap.contains(arr(1))) {
+              instanceCount += 1
               idMap.put(arr(1), instanceCount) 
-            } else {
-              println("duplicate: " + turtle)
-            }
-            //val s = inserter.createNode(Map[String,Object]("value" -> sanitize(subj)).asJava, label("Subject"))
-            //val o = inserter.createNode(Map[String,Object]("value" -> sanitize(obj)).asJava, label("Object"))
-            //val p = inserter.createRelationship(s, o, relType(sanitize(pred)), null)
-           
+              inserter.createNode(instanceCount, null)
+            } 
+            val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
+            val newLabels = curLabels :+ label(subj)
+            inserter.setNodeLabels(instanceCount, newLabels : _*)
+            println("setting label: "+turtle)
+        } else if (idMap.contains(subj)) { // if this is a property of a node
+          val id = idMap.get(subj)
+          inserter.setNodeProperty(id, pred, obj)
+          println("setting property: "+turtle)
         } else {
           //println("doesn't match filters: " + turtle)
         }
