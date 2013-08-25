@@ -50,7 +50,7 @@ object Main extends App {
           val objSplit = obj.split("\\.")
           if(!idMap.contains(objSplit(1))) {
             instanceCount += 1
-            idMap.put(objSplit(1), instanceCount) 
+            idMap.put(objSplit(1), new java.lang.Long(instanceCount)) 
             inserter.createNode(instanceCount, null)
           } 
           val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
@@ -59,11 +59,13 @@ object Main extends App {
         } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
           println("setting property: "+turtle)
           val id = idMap.get(subj)
+          println("found id: "+ id)
           if(inserter.nodeHasProperty(id, pred)) {
+            println("already has prop: " + id + "; pred: "+pred)
             var prop = inserter.getNodeProperties(id).get(pred)
             prop = prop match {
-              case prop:Array[Any] => prop + obj 
-              case _ => Array(prop) + obj
+              case prop:Array[Any] => {println("prop array detected..."); prop + obj}
+              case _ => {println("converting prop to array..."); Array(prop) + obj}
             }
           } else {
             inserter.setNodeProperty(id, pred, obj) 
