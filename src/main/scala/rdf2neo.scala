@@ -56,7 +56,7 @@ object Main extends App {
             } 
             val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
             val newLabels = curLabels :+ label(subj)
-            inserter.setNodeLabels(instanceCount, newLabels : _*)
+            inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
             println("setting label: "+turtle)
         } else if (idMap.contains(subj)) { // if this is a property of a node
           val id = idMap.get(subj)
