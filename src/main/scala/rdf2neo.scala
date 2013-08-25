@@ -46,9 +46,7 @@ object Main extends App {
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
         && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))) {
-          //println("subj: "+subj)
-          //println("pred: "+pred)
-          //println("obj: "+obj)
+          println("setting label: "+turtle)
           val objSplit = obj.split("\\.")
           if(!idMap.contains(objSplit(1))) {
             instanceCount += 1
@@ -58,8 +56,8 @@ object Main extends App {
           val curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
           val newLabels = curLabels :+ label(subj)
           inserter.setNodeLabels(instanceCount, newLabels : _*) // the _* is for varargs
-          println("setting label: "+turtle)
         } else if (subjSplit.length == 2 && idMap.contains(subjSplit(1))) { // if this is a property of a node
+          println("setting property: "+turtle)
           val id = idMap.get(subj)
           if(inserter.nodeHasProperty(id, pred)) {
             var prop = inserter.getNodeProperties(id).get(pred)
@@ -70,7 +68,6 @@ object Main extends App {
           } else {
             inserter.setNodeProperty(id, pred, obj) 
           }
-          println("setting property: "+turtle)
         } else {
           //println("doesn't match filters: " + turtle)
         }
