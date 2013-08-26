@@ -69,23 +69,27 @@ object Main extends App {
             // this is a real property
             println("setting property: " + turtle)
             println("found id: " + subjId)
-            if(inserter.nodeHasProperty(subjId, pred)) {
-              println("already has prop: " + subjId + "; pred: "+pred)
-              var prop = inserter.getNodeProperties(subjId).get(pred)
-              inserter.removeNodeProperty(subjId, pred)
-              println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
-              prop match {
-                case prop:Array[String] => {
-                  println("prop array detected..."); 
-                  inserter.setNodeProperty(subjId, pred, prop :+ obj)
-                }
-                case _ => {
-                  println("converting prop to array..."); 
-                  inserter.setNodeProperty(subjId, pred, Array[String](prop.toString) :+ obj)
-                }
-              }
+            if(obj.startsWith("ns:m.")) {
+              println("dropping relationship on the ground for an id we didn't store: "+turtle)
             } else {
-              inserter.setNodeProperty(subjId, pred, obj) 
+              if(inserter.nodeHasProperty(subjId, pred)) {
+                println("already has prop: " + subjId + "; pred: "+pred)
+                var prop = inserter.getNodeProperties(subjId).get(pred)
+                inserter.removeNodeProperty(subjId, pred)
+                println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
+                prop match {
+                  case prop:Array[String] => {
+                    println("prop array detected..."); 
+                    inserter.setNodeProperty(subjId, pred, prop :+ obj)
+                  }
+                  case _ => {
+                    println("converting prop to array..."); 
+                    inserter.setNodeProperty(subjId, pred, Array[String](prop.toString) :+ obj)
+                  }
+                }
+              } else {
+                inserter.setNodeProperty(subjId, pred, obj) 
+              }
             }
           }
         } else {
