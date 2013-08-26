@@ -72,6 +72,7 @@ object Main extends App {
             if(inserter.nodeHasProperty(subjId, pred)) {
               println("already has prop: " + subjId + "; pred: "+pred)
               var prop = inserter.getNodeProperties(subjId).get(pred)
+              inserter.removeNodeProperty(subjId, pred)
               println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
               prop = prop match {
                 case prop:Array[Object] => {println("prop array detected..."); prop + obj}
