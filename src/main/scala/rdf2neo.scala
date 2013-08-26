@@ -47,9 +47,7 @@ object Main extends App {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
         // check if this is a node we want to keep
         if(Settings.nodeTypePredicates.contains(pred) 
-//       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects(0).startsWith(subj))
-       && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
-//       && (Settings.nodeTypeSubjects.isEmpty || Settings.nodeTypeSubjects.contains(subj))
+        && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
         ) {
           println("setting label: "+turtle)
           if(!idMap.contains(obj)) {
@@ -62,26 +60,26 @@ object Main extends App {
           inserter.setNodeLabels(instanceCount, curLabels : _*) // the _* is for varargs
         } else if (idMap.contains(subj)) { 
           // this is a property/relationship of a node
+          val subjId = idMap.get(subj)
           if(idMap.contains(obj)) {
-            // this is a relationship!
-            val subjId = idMap.get(subj)
+            // this is a relationship
             val objId = idMap.get(obj)
             inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(sanitize(pred)), null)
           } else {
             // this is a real property
             println("setting property: " + turtle)
-            val id = idMap.get(subj)
-            println("found id: " + id)
-            if(inserter.nodeHasProperty(id, pred)) {
-              println("already has prop: " + id + "; pred: "+pred)
-              var prop = inserter.getNodeProperties(id).get(pred)
+            println("found id: " + subjId)
+            if(inserter.nodeHasProperty(subjId, pred)) {
+              println("already has prop: " + subjId + "; pred: "+pred)
+              var prop = inserter.getNodeProperties(subjId).get(pred)
+              println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
               prop = prop match {
-                case prop:Array[Any] => {println("prop array detected..."); prop + obj}
-                case _ => {println("converting prop to array..."); Array(prop) + obj}
+                case prop:Array[Object] => {println("prop array detected..."); prop + obj}
+                case _ => {println("converting prop to array..."); List(prop) + obj}
               }
-              inserter.setNodeProperty(id, pred, prop)
+              inserter.setNodeProperty(subjId, pred, prop)
             } else {
-              inserter.setNodeProperty(id, pred, obj) 
+              inserter.setNodeProperty(subjId, pred, obj) 
             }
           }
         } else {
@@ -101,7 +99,7 @@ object Main extends App {
     @inline @tailrec def listStartsWith(list:Seq[String], str:String, i:Int):Boolean = {
       if(i >= list.length) {
         false
-      } else if(list(i).startsWith(str)) {
+      } else if(str.startsWith(list(i))) {
         true
       } else {
         listStartsWith(list, str, i+1)
