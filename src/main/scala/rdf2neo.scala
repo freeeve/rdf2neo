@@ -74,11 +74,16 @@ object Main extends App {
               var prop = inserter.getNodeProperties(subjId).get(pred)
               inserter.removeNodeProperty(subjId, pred)
               println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
-              prop = prop match {
-                case prop:Array[Object] => {println("prop array detected..."); prop + obj}
-                case _ => {println("converting prop to array..."); List(prop) + obj}
+              prop match {
+                case prop:Array[String] => {
+                  println("prop array detected..."); 
+                  inserter.setNodeProperty(subjId, pred, prop :+ obj)
+                }
+                case _ => {
+                  println("converting prop to array..."); 
+                  inserter.setNodeProperty(subjId, pred, Array[String](prop.toString) :+ obj)
+                }
               }
-              inserter.setNodeProperty(subjId, pred, prop)
             } else {
               inserter.setNodeProperty(subjId, pred, obj) 
             }
