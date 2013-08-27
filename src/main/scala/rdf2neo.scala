@@ -85,7 +85,7 @@ object Main extends App {
           if(!idMap.contains(obj)) {
             instanceCount += 1
             idMap.put(obj, new java.lang.Long(instanceCount)) 
-            inserter.createNode(instanceCount, null)
+            inserter.createNode(instanceCount, Map("mid"->obj).asJava)
           } 
           var curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
           curLabels = curLabels :+ DynamicLabel.label(sanitize(subj))
@@ -93,34 +93,38 @@ object Main extends App {
         } else if (idOnly == false && idMap.contains(subj)) { 
           // this is a property/relationship of a node
           val subjId = idMap.get(subj)
+          val sanitizedPred = sanitize(pred)
           if(idMap.contains(obj)) {
             // this is a relationship
+            println("creating relationship: " + turtle)
             val objId = idMap.get(obj)
-            inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(sanitize(pred)), null)
+            inserter.createRelationship(subjId, objId, DynamicRelationshipType.withName(sanitizedPred), null)
           } else {
             // this is a real property
-            println("setting property: " + turtle)
-            println("found id: " + subjId)
+            //println("setting property: " + turtle)
             if(obj.startsWith("ns:m.")) {
-              println("dropping relationship on the ground for an id we don't have: "+turtle)
+              //println("dropping relationship on the ground for an id we don't have: "+turtle)
             } else {
-              if(inserter.nodeHasProperty(subjId, pred)) {
-                println("already has prop: " + subjId + "; pred: "+pred)
-                var prop = inserter.getNodeProperties(subjId).get(pred)
-                inserter.removeNodeProperty(subjId, pred)
-                println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
-                prop match {
-                  case prop:Array[String] => {
-                    println("prop array detected..."); 
-                    inserter.setNodeProperty(subjId, pred, prop :+ obj)
+              val trimmedObj = obj.replaceAll("^\"|\"$", "")
+              if(trimmedObj.substring(trimmedObj.length-3)(0) != '.' || trimmedObj.endsWith(".en")) { 
+                if(inserter.nodeHasProperty(subjId, sanitizedPred)) {
+                  //println("already has prop: " + subjId + "; pred: "+pred)
+                  var prop = inserter.getNodeProperties(subjId).get(sanitizedPred)
+                  inserter.removeNodeProperty(subjId, sanitizedPred)
+                  //println("got node property: " +subjId + ":"+pred + "; prop: "+prop)
+                  prop match {
+                    case prop:Array[String] => {
+                     // println("prop array detected..."); 
+                      inserter.setNodeProperty(subjId, sanitizedPred, prop :+ trimmedObj)
+                    }
+                    case _ => {
+                      //println("converting prop to array..."); 
+                      inserter.setNodeProperty(subjId, sanitizedPred, Array[String](prop.toString) :+ trimmedObj)
+                    }
                   }
-                  case _ => {
-                    println("converting prop to array..."); 
-                    inserter.setNodeProperty(subjId, pred, Array[String](prop.toString) :+ obj)
-                  }
+                } else {
+                  inserter.setNodeProperty(subjId, sanitizedPred, trimmedObj) 
                 }
-              } else {
-                inserter.setNodeProperty(subjId, pred, obj) 
               }
             }
           }
