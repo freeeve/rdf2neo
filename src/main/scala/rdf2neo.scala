@@ -14,23 +14,42 @@ import gnu.trove.map.hash.TObjectLongHashMap
 object Main extends App {
   val inserter = BatchInserters.inserter(Settings.outputGraphPath);
 
-  val is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
-  val in = new BufferedReader(new InputStreamReader(is))
+  var is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
+  var in = new BufferedReader(new InputStreamReader(is))
   var count:Long = 0
   var instanceCount:Long = 0
   val startTime = System.currentTimeMillis
   var lastTime = System.currentTimeMillis
+  val turtleSplit = Array[String]("","","") // reused to avoid GC
   val idMap = new TObjectLongHashMap[String]()
+
   Stream.continually(in.readLine)
         .takeWhile(_ != null)
         .foreach(processTurtle(_, true))
-  in.reset
+
+  is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
+  in = new BufferedReader(new InputStreamReader(is))
+
   count = 0;
   Stream.continually(in.readLine)
         .takeWhile(_ != null)
         .foreach(processTurtle(_, false))
 
   inserter.shutdown();
+
+  @inline def fastSplit(arr:Array[String], turtle:String):Int = {
+    var c = 0
+    var idx = turtle.indexOf('\t')
+    if(idx > 0) c += 1
+    else return c
+    arr(0) = turtle.substring(0, idx)
+    var idx2 = turtle.indexOf('\t', idx+1)
+    if(idx2 > 0) c += 1
+    else return c
+    arr(1) = turtle.substring(idx+1, idx2)
+    arr(2) = turtle.substring(idx2+1)
+    return c+1
+  }
 
   @inline def processTurtle(turtle:String, idOnly:Boolean) = {
     count += 1
@@ -54,9 +73,9 @@ object Main extends App {
     } else if (turtle.startsWith("#")) { 
       // definitely don't need to handle these
     } else if (turtle.length > 1) {
-      val arr = turtle.substring(0,turtle.length-1).split("\\t")
-      if(arr.length == 3) {
-        val (subj, pred, obj) = (arr(0), arr(1), arr(2))
+      val arrlength = fastSplit(turtleSplit, turtle)
+      if(arrlength == 3) {
+        val (subj, pred, obj) = (turtleSplit(0), turtleSplit(1), turtleSplit(2))
         // check if this is a node we want to keep
         if(idOnly == true && Settings.nodeTypePredicates.contains(pred) 
         && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
