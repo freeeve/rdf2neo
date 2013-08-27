@@ -27,10 +27,11 @@ object Main extends App {
         .takeWhile(_ != null)
         .foreach(processTurtle(_, true))
 
+  in.close
   is = new GZIPInputStream(new FileInputStream(Settings.gzippedTurtleFile))
   in = new BufferedReader(new InputStreamReader(is))
 
-  count = 0;
+  count = 0
   Stream.continually(in.readLine)
         .takeWhile(_ != null)
         .foreach(processTurtle(_, false))
