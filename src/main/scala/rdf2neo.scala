@@ -85,7 +85,7 @@ object Main extends App {
           if(!idMap.contains(obj)) {
             instanceCount += 1
             idMap.put(obj, new java.lang.Long(instanceCount)) 
-            inserter.createNode(instanceCount, Map("mid"->obj).asJava)
+            inserter.createNode(instanceCount, Map[String,Object]("mid"->obj).asJava)
           } 
           var curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
           curLabels = curLabels :+ DynamicLabel.label(sanitize(subj))
