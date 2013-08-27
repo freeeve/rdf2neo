@@ -106,7 +106,8 @@ object Main extends App {
               //println("dropping relationship on the ground for an id we don't have: "+turtle)
             } else {
               val trimmedObj = obj.replaceAll("^\"|\"$", "")
-              if(trimmedObj.substring(trimmedObj.length-3)(0) != '.' || trimmedObj.endsWith(".en")) { 
+              if((trimmedObj.length > 3 && trimmedObj.substring(trimmedObj.length-3)(0) != '.' || trimmedObj.endsWith(".en"))
+              && (trimmedSubj.length > 3 && trimmedSubj.substring(trimmedSubj.length-3(0) != '_' || trimmedSubj.endsWith("_en"))) { 
                 if(inserter.nodeHasProperty(subjId, sanitizedPred)) {
                   //println("already has prop: " + subjId + "; pred: "+pred)
                   var prop = inserter.getNodeProperties(subjId).get(sanitizedPred)
