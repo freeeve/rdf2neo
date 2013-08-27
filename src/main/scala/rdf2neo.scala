@@ -48,7 +48,7 @@ object Main extends App {
     if(idx2 > 0) c += 1
     else return c
     arr(1) = turtle.substring(idx+1, idx2)
-    arr(2) = turtle.substring(idx2+1)
+    arr(2) = turtle.substring(idx2+1, turtle.length-1)
     return c+1
   }
 
