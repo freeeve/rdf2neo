@@ -107,7 +107,7 @@ object Main extends App {
             } else {
               val trimmedObj = obj.replaceAll("^\"|\"$", "")
               if((trimmedObj.length > 3 && trimmedObj.substring(trimmedObj.length-3)(0) != '.' || trimmedObj.endsWith(".en"))
-              && (trimmedSubj.length > 3 && trimmedSubj.substring(trimmedSubj.length-3(0) != '_' || trimmedSubj.endsWith("_en"))) { 
+              && (sanitizedPred.length > 3 && sanitizedPred.substring(sanitizedPred.length-3(0) != '_' || sanitizedPred.endsWith("_en"))) { 
                 if(inserter.nodeHasProperty(subjId, sanitizedPred)) {
                   //println("already has prop: " + subjId + "; pred: "+pred)
                   var prop = inserter.getNodeProperties(subjId).get(sanitizedPred)
