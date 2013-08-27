@@ -21,17 +21,29 @@ object Main extends App {
   val startTime = System.currentTimeMillis
   var lastTime = System.currentTimeMillis
   val idMap = new TObjectLongHashMap[String]()
-  Stream.continually(in.readLine())
+  Stream.continually(in.readLine)
         .takeWhile(_ != null)
-        .foreach(processTurtle(_))
+        .foreach(processTurtle(_, true))
+  in.reset
+  count = 0;
+  Stream.continually(in.readLine)
+        .takeWhile(_ != null)
+        .foreach(processTurtle(_, false))
 
   inserter.shutdown();
 
-  @inline def processTurtle(turtle:String) = {
+  @inline def processTurtle(turtle:String, idOnly:Boolean) = {
     count += 1
     if(count % 10000000 == 0) {
       val curTime = System.currentTimeMillis
-      println(count/1000000 + "M turtle lines processed; elapsed: " + ((curTime - startTime) / 1000) + "s; last 10M: " + ((curTime - lastTime) / 1000) + "s")
+      println(count/1000000 + 
+        "M turtle lines processed(" +
+        if(idOnly) "first pass" else "second pass" +
+        "); elapsed: " + 
+        ((curTime - startTime) / 1000) + 
+        "s; last 10M: " + 
+        ((curTime - lastTime) / 1000) + 
+        "s")
       lastTime = curTime
       println("idMap size: " + idMap.size)
     }
@@ -46,7 +58,7 @@ object Main extends App {
       if(arr.length == 3) {
         val (subj, pred, obj) = (arr(0), arr(1), arr(2))
         // check if this is a node we want to keep
-        if(Settings.nodeTypePredicates.contains(pred) 
+        if(idOnly == true && Settings.nodeTypePredicates.contains(pred) 
         && (Settings.nodeTypeSubjects.isEmpty || listStartsWith(Settings.nodeTypeSubjects, subj))
         ) {
           println("setting label: "+turtle)
@@ -58,7 +70,7 @@ object Main extends App {
           var curLabels = inserter.getNodeLabels(instanceCount).asScala.toArray
           curLabels = curLabels :+ DynamicLabel.label(sanitize(subj))
           inserter.setNodeLabels(instanceCount, curLabels : _*) // the _* is for varargs
-        } else if (idMap.contains(subj)) { 
+        } else if (idOnly == false && idMap.contains(subj)) { 
           // this is a property/relationship of a node
           val subjId = idMap.get(subj)
           if(idMap.contains(obj)) {
@@ -70,7 +82,7 @@ object Main extends App {
             println("setting property: " + turtle)
             println("found id: " + subjId)
             if(obj.startsWith("ns:m.")) {
-              println("dropping relationship on the ground for an id we didn't store: "+turtle)
+              println("dropping relationship on the ground for an id we don't have: "+turtle)
             } else {
               if(inserter.nodeHasProperty(subjId, pred)) {
                 println("already has prop: " + subjId + "; pred: "+pred)
