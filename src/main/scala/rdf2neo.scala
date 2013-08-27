@@ -38,7 +38,7 @@ object Main extends App {
       val curTime = System.currentTimeMillis
       println(count/1000000 + 
         "M turtle lines processed(" +
-        if(idOnly) "first pass" else "second pass" +
+        (if(idOnly) "first pass" else "second pass") +
         "); elapsed: " + 
         ((curTime - startTime) / 1000) + 
         "s; last 10M: " + 
