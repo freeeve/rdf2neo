@@ -1,0 +1,14 @@
+{
+  "__comment": "this JSON file supports new freebase data format",
+  
+  "outputGraphPath":"<path_to_graph_output_directory>",
+  "gzippedTurtleFile":"<path_to_freebase_gz_file_directory>/<freebase_gz_file_name>.gz",
+  "nodeTypeSubjects": ["<http://rdf.freebase.com/ns/chemistry.chemical_compound>"],
+  "nodeTypePredicates": ["<http://rdf.freebase.com/ns/type.type.instance>"],  
+  "ignoreSubjects":[],
+  "ignorePredicates":[],
+  "ignoreObjects":[],
+  "ignorePredicatePrefixes":[],
+  "ignoreSubjectPrefixes":[],
+  "ignoreObjectPrefixes":[] 
+}
