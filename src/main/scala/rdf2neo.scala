@@ -48,7 +48,13 @@ object Main extends App {
     if(idx2 > 0) c += 1
     else return c
     arr(1) = turtle.substring(idx+1, idx2)
-    arr(2) = turtle.substring(idx2+1, turtle.length-1)
+    //old freebase dataset format
+    //arr(2) = turtle.substring(idx2+1, turtle.length-1)
+	
+    //new freebase dataset format	    
+    var idx3 = turtle.lastIndexOf('\t')
+    arr(2) = turtle.substring(idx2+1, idx3)    
+	
     return c+1
   }
 
@@ -102,7 +108,11 @@ object Main extends App {
           } else {
             // this is a real property
             //println("setting property: " + turtle)
-            if(obj.startsWith("ns:m.")) {
+			
+            //old freebase format
+            //if(obj.startsWith("ns:m.")) {
+            //new freebase dataset format	            
+            if (obj.startsWith("<http://rdf.freebase.com/ns/m.")){            
               //println("dropping relationship on the ground for an id we don't have: "+turtle)
             } else {
               val trimmedObj = obj.replaceAll("^\"|\"$", "")
