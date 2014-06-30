@@ -21,7 +21,7 @@ object Settings {
   val fbRdfPrefixLen = fbRdfPrefix.length()
 
   val outputGraphPath = config.getString("outputGraphPath")
-  val gzippedTurtleFile = config.getString("gzippedTurtleFile")
+  val gzippedNTripleFile = config.getString("gzippedNTripleFile")
   val errorLogFile = config.getString("errorLogFile")
   val statusLogFile = config.getString("statusLogFile")
   val nodeTypeSubjects = config.getList("nodeTypeSubjects").unwrapped.asScala.toSeq.map(_.asInstanceOf[String])

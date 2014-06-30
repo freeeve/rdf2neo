@@ -20,10 +20,14 @@ object mid2long {
 
   // 10s for 100M encodes... probably not worth optimizing
   def encode(mid:String):Long = {
-    var result = 0L;
-    (0 until mid.length).foreach{i => 
+    var result = 0L
+    var length = mid.length
+    (0 until length).foreach{i =>
+      if (mid.charAt(i) >= 128) {
+        return -1
+      }
       result |= enc(mid.charAt(i))
-      if (i != mid.length-1) result <<= bits
+      if (i != length-1) result <<= bits
     }
     result
   }
