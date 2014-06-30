@@ -8,6 +8,7 @@ class IdMap {
   var idx = 0
   var flag = false
   def put(mid:Long) = {
+    if(flag) throw new Exception("done() already called.")
     arr(idx) = mid
     idx += 1
   }
