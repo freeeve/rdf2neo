@@ -13,7 +13,7 @@ class IdMap {
   }
   def get(mid:Long):Long = {
     if(!flag) throw new Exception("need to call done() first.")
-    util.Arrays.binarySearch(arr, mid, 0, idx).toLong
+    util.Arrays.binarySearch(arr, 0, idx, mid).toLong
   }
   def contains(mid:Long):Boolean = {
     get(mid) > 0
