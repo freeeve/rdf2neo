@@ -13,8 +13,6 @@ import java.util.zip.GZIPInputStream
 import org.neo4j.graphdb.{DynamicRelationshipType, DynamicLabel}
 import org.neo4j.unsafe.batchinsert.BatchInserters
 
-import gnu.trove.map.hash.TObjectLongHashMap
-
 abstract class RdfError(errorString: String)
 case class MalformedRdfError(errorString: String) extends RdfError(errorString)
 case class MissingIdRdfError(errorString: String) extends RdfError(errorString)
@@ -49,7 +47,7 @@ object Main extends App {
     var instanceCount = 0L
     val startTime = System.currentTimeMillis
     var lastTime = System.currentTimeMillis
-    val idMap = new TObjectLongHashMap[String]()
+    val idMap = collection.mutable.HashMap[String,Long]()//new TObjectLongHashMap[String]()
 
     //println("Settings.nodeTypeSubjects:" + Settings.nodeTypeSubjects)
     //println("Settings.nodeTypePredicates:" + Settings.nodeTypePredicates)
@@ -86,7 +84,6 @@ object Main extends App {
         val length = string.length()
 
         if (string.startsWith("\"") && string.contains("\"@")) {
-            // "Droge"@de
             if (string.endsWith("\"@en")) {
                 string.substring(1, length - 4)
             }
@@ -324,13 +321,13 @@ object Main extends App {
 
             if (idMap.contains(subject)) {
                 // this is a property/relationship of a node
-                val subjectId = idMap.get(subject)
+                val subjectId = idMap(subject)
                 val sanitizedPredicate = sanitize(predicate)
 
                 if(idMap.contains(obj)) {
                     // this is a relationship
                     writeToStatusLog("creating relationship: " + tripleString)
-                    val objId = idMap.get(obj)
+                    val objId = idMap(obj)
 
                     if(neoFlag) {
 
@@ -392,10 +389,8 @@ object Main extends App {
         {
             Stream.continually(rdfFileReader.readLine)
                 .takeWhile(_ != null)
-                .foreach((tripleString) => {
-
+                .foreach{tripleString => 
                     printStatus();
-
                     val rdfTriple = parseTriple(tripleString)
 
                     rdfTriple match {
@@ -404,7 +399,7 @@ object Main extends App {
 
                         case _ => {} //logRdfError(MalformedRdfError(""), tripleString, rdfTriple)
                     }
-                })
+                }
         }
         finally
         {
